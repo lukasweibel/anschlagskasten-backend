@@ -1,8 +1,13 @@
 package ch.lukasweibel.anschlagkasten.db;
 
 import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.ConnectionString;
@@ -13,7 +18,12 @@ import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
 
+import ch.lukasweibel.anschlagkasten.model.Anschlag;
+
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,8 +39,11 @@ public class DbAccessor {
     Gson gson;
     MongoCollection<Document> personsCol;
     MongoCollection<Document> anschlaegeCol;
+    ObjectMapper objectMapper;
 
     public DbAccessor() {
+        objectMapper = new ObjectMapper();
+
         connectionString = new ConnectionString(
                 "mongodb+srv://lukasweibel:z17zzGXMLkjrhMZ6@cluster0.5pogeh5.mongodb.net/?retryWrites=true&w=majority");
 
@@ -66,18 +79,57 @@ public class DbAccessor {
         return personsList;
     }
 
-    public ArrayList<Document> getAnschlaege() {
-        ArrayList<Document> anschlaegeList = new ArrayList<>();
+    public ArrayList<Anschlag> getAnschlaege() {
+        ArrayList<Anschlag> anschlaegeList = new ArrayList<>();
 
         List<Document> pipeline = Arrays.asList();
 
         AggregateIterable<Document> result = anschlaegeCol.aggregate(pipeline);
 
         for (Document document : result) {
-            anschlaegeList.add(document);
+            Anschlag anschlag = null;
+            try {
+                anschlag = objectMapper.readValue(document.toJson(), Anschlag.class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            anschlaegeList.add(anschlag);
         }
-
         return anschlaegeList;
+    }
+
+    public void saveAnschlag(Anschlag anschlag) {
+        anschlag.setStatus(1);
+        anschlag.setCreationDate(Instant.now().toEpochMilli());
+        try {
+            String anschlagJson = objectMapper.writeValueAsString(anschlag);
+            Document anschlagDoc = Document.parse(anschlagJson);
+            anschlagDoc.remove("_id");
+            anschlagDoc.append("_id", new ObjectId());
+            anschlaegeCol.insertOne(anschlagDoc);
+            System.out.println("Anschlag saved successfully.");
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            System.out.println("Error saving anschlag.");
+        }
+    }
+
+    public void updateAnschlag(Anschlag anschlag) {
+        System.out.println(anschlag.get_id());
+        /*
+         * try {
+         * String anschlagJson = objectMapper.writeValueAsString(anschlag);
+         * Document anschlagDoc = Document.parse(anschlagJson);
+         * Bson filter = Filters.eq("_id", new ObjectId(anschlagDoc.getString("_id")));
+         * anschlagDoc.get("_id");
+         * Bson updateOperation = Updates.set("fieldToUpdate",
+         * anschlagDoc.get("fieldToUpdate"));
+         * anschlaegeCol.updateOne(filter, updateOperation, null);
+         * } catch (JsonProcessingException e) {
+         * // TODO Auto-generated catch block
+         * e.printStackTrace();
+         * }
+         */
     }
 
 }

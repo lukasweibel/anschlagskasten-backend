@@ -2,6 +2,7 @@ package ch.lukasweibel.anschlagkasten.controller;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
@@ -21,15 +22,24 @@ public class AnschlagResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public String listAnschlaege() throws JsonProcessingException {
+    public Response listAnschlaege() throws JsonProcessingException {
         String json = objectMapper.writeValueAsString(dbAccessor.getAnschlaege());
-        return json;
+        return Response.ok(json).build();
     }
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveAnschlag(String jsonString) throws JsonProcessingException {
         Anschlag anschlag = objectMapper.readValue(jsonString, Anschlag.class);
+        dbAccessor.saveAnschlag(anschlag);
+        return Response.ok().build();
+    }
+
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateAnschlag(String jsonString) throws JsonProcessingException {
+        Anschlag anschlag = objectMapper.readValue(jsonString, Anschlag.class);
+        dbAccessor.updateAnschlag(anschlag);
         return Response.ok().build();
     }
 

@@ -1,13 +1,20 @@
 package ch.lukasweibel.anschlagkasten.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
+import org.bson.types.ObjectId;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import ch.lukasweibel.helper.ObjectIdDeserializer;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Anschlag {
-    private String id;
-    private List<Comment> comments;
+    @JsonDeserialize(using = ObjectIdDeserializer.class)
+    private ObjectId _id;
     private long creationDate;
+    private List<Comment> comments;
     private String date;
     private String endPlace;
     private String endTime;
@@ -18,13 +25,30 @@ public class Anschlag {
     private String startPlace;
     private String startTime;
     private String title;
+    private Integer status;
 
-    public String getId() {
-        return id;
+    public Integer getStatus() {
+        return status;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+    public ObjectId get_id() {
+        return _id;
+    }
+
+    public void set_id(ObjectId _id) {
+        this._id = _id;
+    }
+
+    public long getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(long creationDate) {
+        this.creationDate = creationDate;
     }
 
     public List<Comment> getComments() {
@@ -33,16 +57,6 @@ public class Anschlag {
 
     public void setComments(List<Comment> comments) {
         this.comments = comments;
-    }
-
-    @JsonProperty("creationDate")
-    public long getCreationDate() {
-        return creationDate;
-    }
-
-    @JsonProperty("creationDate")
-    public void setCreationDate(long creationDate) {
-        this.creationDate = creationDate;
     }
 
     public String getDate() {
