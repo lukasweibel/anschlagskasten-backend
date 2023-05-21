@@ -2,8 +2,6 @@ package ch.lukasweibel.anschlagkasten.model;
 
 import java.util.List;
 
-import org.bson.types.ObjectId;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -12,7 +10,7 @@ import ch.lukasweibel.helper.ObjectIdDeserializer;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Anschlag {
     @JsonDeserialize(using = ObjectIdDeserializer.class)
-    private ObjectId _id;
+    private String _id;
     private long creationDate;
     private List<Comment> comments;
     private String date;
@@ -33,14 +31,6 @@ public class Anschlag {
 
     public void setStatus(Integer status) {
         this.status = status;
-    }
-
-    public ObjectId get_id() {
-        return _id;
-    }
-
-    public void set_id(ObjectId _id) {
-        this._id = _id;
     }
 
     public long getCreationDate() {
@@ -139,33 +129,11 @@ public class Anschlag {
         this.title = title;
     }
 
-    public static class Comment {
-        private String name;
-        private String text;
-        private long timestamp;
+    public String get_id() {
+        return _id;
+    }
 
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getText() {
-            return text;
-        }
-
-        public void setText(String text) {
-            this.text = text;
-        }
-
-        public long getTimestamp() {
-            return timestamp;
-        }
-
-        public void setTimestamp(long timestamp) {
-            this.timestamp = timestamp;
-        }
+    public void set_id(String _id) {
+        this._id = _id;
     }
 }

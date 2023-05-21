@@ -3,10 +3,8 @@ package ch.lukasweibel.anschlagkasten.db;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -22,6 +20,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 
 import ch.lukasweibel.anschlagkasten.model.Anschlag;
+import ch.lukasweibel.anschlagkasten.model.Comment;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -101,6 +100,7 @@ public class DbAccessor {
     public void saveAnschlag(Anschlag anschlag) {
         anschlag.setStatus(1);
         anschlag.setCreationDate(Instant.now().toEpochMilli());
+        anschlag.setComments(new ArrayList<>());
         try {
             String anschlagJson = objectMapper.writeValueAsString(anschlag);
             Document anschlagDoc = Document.parse(anschlagJson);
@@ -116,20 +116,33 @@ public class DbAccessor {
 
     public void updateAnschlag(Anschlag anschlag) {
         System.out.println(anschlag.get_id());
-        /*
-         * try {
-         * String anschlagJson = objectMapper.writeValueAsString(anschlag);
-         * Document anschlagDoc = Document.parse(anschlagJson);
-         * Bson filter = Filters.eq("_id", new ObjectId(anschlagDoc.getString("_id")));
-         * anschlagDoc.get("_id");
-         * Bson updateOperation = Updates.set("fieldToUpdate",
-         * anschlagDoc.get("fieldToUpdate"));
-         * anschlaegeCol.updateOne(filter, updateOperation, null);
-         * } catch (JsonProcessingException e) {
-         * // TODO Auto-generated catch block
-         * e.printStackTrace();
-         * }
-         */
+
+        try {
+            String anschlagJson = objectMapper.writeValueAsString(anschlag);
+            Document anschlagDoc = Document.parse(anschlagJson);
+            Bson filter = Filters.eq("_id", new ObjectId(anschlagDoc.getString("_id")));
+
+            anschlagDoc.remove("_id");
+
+            Bson update = Updates.combine(Updates.set("title", "TEST"));
+
+            anschlaegeCol.updateOne(filter, update);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void addComment(String _id, Comment comment) {
+        Bson filter = Filters.eq("_id", new ObjectId(_id));
+
+        Document commentDoc = new Document();
+        commentDoc.append("name", comment.getName());
+        commentDoc.append("text", comment.getText());
+        commentDoc.append("timestamp", comment.getTimestamp());
+
+        Bson update = Updates.addToSet("comments", commentDoc);
+
+        anschlaegeCol.updateOne(filter, update);
     }
 
 }
