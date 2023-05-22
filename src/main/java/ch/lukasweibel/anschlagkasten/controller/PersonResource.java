@@ -19,7 +19,7 @@ public class PersonResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public String listAnschlaege() throws JsonProcessingException {
-        String json = objectMapper.writeValueAsString(dbAccessor.getPersons());
+        String json = objectMapper.writeValueAsString(dbAccessor.getPersonsByStufe());
         return json;
     }
 }

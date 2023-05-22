@@ -78,6 +78,28 @@ public class DbAccessor {
         return personsList;
     }
 
+    public ArrayList<Document> getPersonsByStufe() {
+        ArrayList<Document> stufenListe = new ArrayList<>();
+
+        List<Document> pipeline = Arrays.asList(new Document("$group",
+                new Document("_id", "$stufe")
+                        .append("people",
+                                new Document("$push",
+                                        new Document("_id", "$_id")
+                                                .append("firstname", "$firstname")
+                                                .append("lastname", "$lastname")
+                                                .append("vulgo", "$vulgo")
+                                                .append("programs", "$programs")))));
+
+        AggregateIterable<Document> result = personsCol.aggregate(pipeline);
+
+        for (Document document : result) {
+            stufenListe.add(document);
+        }
+
+        return stufenListe;
+    }
+
     public ArrayList<Anschlag> getAnschlaege() {
         ArrayList<Anschlag> anschlaegeList = new ArrayList<>();
 
