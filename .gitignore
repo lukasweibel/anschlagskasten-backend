@@ -39,4 +39,4 @@ nb-configuration.xml
 # Local environment
 .env
 
-*.properties
+application.properties
