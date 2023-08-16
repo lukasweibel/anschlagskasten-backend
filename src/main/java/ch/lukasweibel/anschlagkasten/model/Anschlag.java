@@ -14,6 +14,7 @@ public class Anschlag {
     private long creationDate;
     private List<Comment> comments;
     private String date;
+    private String createDate;
     private String endPlace;
     private String endTime;
     private String finalWord;
@@ -24,6 +25,15 @@ public class Anschlag {
     private String startTime;
     private String title;
     private Integer status;
+    private String updateToken;
+
+    public String getUpdateToken() {
+        return updateToken;
+    }
+
+    public void setUpdateToken(String updateToken) {
+        this.updateToken = updateToken;
+    }
 
     public Integer getStatus() {
         return status;
@@ -136,4 +146,13 @@ public class Anschlag {
     public void set_id(String _id) {
         this._id = _id;
     }
+
+    public String getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(String createDate) {
+        this.createDate = createDate;
+    }
+
 }

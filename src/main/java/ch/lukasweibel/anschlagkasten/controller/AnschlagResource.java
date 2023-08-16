@@ -11,6 +11,7 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.inject.Inject;
 
 import ch.lukasweibel.anschlagkasten.db.DbAccessor;
 import ch.lukasweibel.anschlagkasten.model.Anschlag;
@@ -19,13 +20,14 @@ import ch.lukasweibel.anschlagkasten.model.Comment;
 @Path("/anschlaege")
 public class AnschlagResource {
 
-    DbAccessor dbAccessor = new DbAccessor();
+    @Inject
+    DbAccessor dbAccessor;
     ObjectMapper objectMapper = new ObjectMapper();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response listAnschlaege() throws JsonProcessingException {
-        String json = objectMapper.writeValueAsString(dbAccessor.getAnschlaege());
+        String json = objectMapper.writeValueAsString(dbAccessor.getActiveAnschlaege());
         return Response.ok(json).build();
     }
 
@@ -33,8 +35,22 @@ public class AnschlagResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveAnschlag(String jsonString) throws JsonProcessingException {
         Anschlag anschlag = objectMapper.readValue(jsonString, Anschlag.class);
-        dbAccessor.saveAnschlag(anschlag);
-        return Response.ok().build();
+        String id = dbAccessor.saveAnschlag(anschlag);
+        return Response.ok(id).build();
+    }
+
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateAnschlag(String jsonString)
+            throws JsonProcessingException {
+        Anschlag anschlag = objectMapper.readValue(jsonString, Anschlag.class);
+        if (dbAccessor.checkUpdateToken(anschlag)) {
+            dbAccessor.updateAnschlag(anschlag);
+            return Response.ok().build();
+        } else {
+            return Response.status(401).build();
+        }
+
     }
 
     @POST
@@ -45,5 +61,14 @@ public class AnschlagResource {
         Comment comment = objectMapper.readValue(newCommentJsonString, Comment.class);
         dbAccessor.addComment(anschlagId, comment);
         return Response.ok().build();
+    }
+
+    @GET
+    @Path("/ordered")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getOrderedAnschlaege()
+            throws JsonProcessingException {
+        String json = objectMapper.writeValueAsString(dbAccessor.getOrderedAnschlaege());
+        return Response.ok(json).build();
     }
 }

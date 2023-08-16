@@ -18,17 +18,21 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
+import com.oracle.svm.core.annotate.Inject;
 
 import ch.lukasweibel.anschlagkasten.model.Anschlag;
 import ch.lukasweibel.anschlagkasten.model.Comment;
+import javax.enterprise.context.ApplicationScoped;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import com.mongodb.client.MongoCollection;
 
+@ApplicationScoped
 public class DbAccessor {
 
     ConnectionString connectionString;
@@ -40,11 +44,10 @@ public class DbAccessor {
     MongoCollection<Document> anschlaegeCol;
     ObjectMapper objectMapper;
 
-    public DbAccessor() {
+    public DbAccessor(@ConfigProperty(name = "mongodb.connection-string") String connectionStr) {
         objectMapper = new ObjectMapper();
 
-        connectionString = new ConnectionString(
-                "mongodb+srv://lukasweibel:z17zzGXMLkjrhMZ6@cluster0.5pogeh5.mongodb.net/?retryWrites=true&w=majority");
+        connectionString = new ConnectionString(connectionStr);
 
         settings = MongoClientSettings.builder()
                 .applyConnectionString(connectionString)
@@ -78,6 +81,27 @@ public class DbAccessor {
         return personsList;
     }
 
+    public void addPerson(Document newPerson, String stufe) {
+        Document person = new Document();
+
+        String id = newPerson.getString("id");
+
+        person.append("id", id);
+        person.append("firstName", newPerson.get("first_name"));
+        person.append("lastName", newPerson.get("last_name"));
+        person.append("vulgo", newPerson.get("nickname"));
+        person.append("stufe", stufe);
+        person.append("programs", new ArrayList<>());
+
+        boolean isPersonExists = personsCol.countDocuments(Filters.eq("id", id)) > 0;
+
+        if (!isPersonExists) {
+            personsCol.insertOne(person);
+            System.out.println("Inserted new person: " + id);
+        }
+        System.out.println(personsCol.find().into(new ArrayList<>()));
+    }
+
     public ArrayList<Document> getPersonsByStufe() {
         ArrayList<Document> stufenListe = new ArrayList<>();
 
@@ -85,11 +109,20 @@ public class DbAccessor {
                 new Document("_id", "$stufe")
                         .append("people",
                                 new Document("$push",
-                                        new Document("_id", "$_id")
+                                        new Document("_id",
+                                                new Document("$toString", "$_id"))
                                                 .append("firstname", "$firstname")
                                                 .append("lastname", "$lastname")
                                                 .append("vulgo", "$vulgo")
-                                                .append("programs", "$programs")))));
+                                                .append("stufe", "$stufe")
+                                                .append("programs",
+                                                        new Document("$map",
+                                                                new Document("input", "$programs")
+                                                                        .append("as", "program")
+                                                                        .append("in",
+                                                                                new Document("anschlagId",
+                                                                                        new Document("$toString",
+                                                                                                "$$program.anschlagId")))))))));
 
         AggregateIterable<Document> result = personsCol.aggregate(pipeline);
 
@@ -100,10 +133,11 @@ public class DbAccessor {
         return stufenListe;
     }
 
-    public ArrayList<Anschlag> getAnschlaege() {
+    public ArrayList<Anschlag> getActiveAnschlaege() {
         ArrayList<Anschlag> anschlaegeList = new ArrayList<>();
 
-        List<Document> pipeline = Arrays.asList();
+        List<Document> pipeline = Arrays.asList(new Document("$match",
+                new Document("status", 1L)));
 
         AggregateIterable<Document> result = anschlaegeCol.aggregate(pipeline);
 
@@ -114,31 +148,82 @@ public class DbAccessor {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            anschlag.setUpdateToken(null);
             anschlaegeList.add(anschlag);
         }
         return anschlaegeList;
     }
 
-    public void saveAnschlag(Anschlag anschlag) {
+    public ArrayList<Document> getOrderedAnschlaege() {
+        ArrayList<Document> anschlaegeList = new ArrayList<>();
+
+        List<Document> pipeline = Arrays.asList(new Document("$group",
+                new Document("_id",
+                        new Document("title", "$title")
+                                .append("year",
+                                        new Document("$year",
+                                                new Document("$toDate", "$date"))))
+                        .append("documents",
+                                new Document("$push",
+                                        new Document("_id",
+                                                new Document("$toString", "$_id"))
+                                                .append("creationDate", "$creationDate")
+                                                .append("comments", "$comments")
+                                                .append("date", "$date")
+                                                .append("endPlace", "$endPlace")
+                                                .append("endTime", "$endTime")
+                                                .append("finalWord", "$finalWord")
+                                                .append("introducing", "$introducing")
+                                                .append("itemsToBring", "$itemsToBring")
+                                                .append("name", "$name")
+                                                .append("startPlace", "$startPlace")
+                                                .append("startTime", "$startTime")
+                                                .append("title", "$title")
+                                                .append("status", "$status")))),
+                new Document("$sort",
+                        new Document("_id.year", -1L)),
+                new Document("$group",
+                        new Document("_id", "$_id.title")
+                                .append("years",
+                                        new Document("$push",
+                                                new Document("year", "$_id.year")
+                                                        .append("documents", "$documents")))),
+                new Document("$project",
+                        new Document("_id", 0L)
+                                .append("title", "$_id")
+                                .append("years", 1L)));
+
+        AggregateIterable<Document> result = anschlaegeCol.aggregate(pipeline);
+
+        for (Document document : result) {
+            System.out.println(document);
+            anschlaegeList.add(document);
+        }
+        return anschlaegeList;
+    }
+
+    public String saveAnschlag(Anschlag anschlag) {
         anschlag.setStatus(1);
         anschlag.setCreationDate(Instant.now().toEpochMilli());
         anschlag.setComments(new ArrayList<>());
+        ObjectId objectId = new ObjectId();
+        String id = objectId.toString();
         try {
             String anschlagJson = objectMapper.writeValueAsString(anschlag);
             Document anschlagDoc = Document.parse(anschlagJson);
             anschlagDoc.remove("_id");
-            anschlagDoc.append("_id", new ObjectId());
+
+            anschlagDoc.append("_id", objectId);
             anschlaegeCol.insertOne(anschlagDoc);
-            System.out.println("Anschlag saved successfully.");
+            System.out.println("Anschlag saved successfully with ID: " + id);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             System.out.println("Error saving anschlag.");
         }
+        return id;
     }
 
     public void updateAnschlag(Anschlag anschlag) {
-        System.out.println(anschlag.get_id());
-
         try {
             String anschlagJson = objectMapper.writeValueAsString(anschlag);
             Document anschlagDoc = Document.parse(anschlagJson);
@@ -146,11 +231,24 @@ public class DbAccessor {
 
             anschlagDoc.remove("_id");
 
-            Bson update = Updates.combine(Updates.set("title", "TEST"));
+            Bson update = new Document("$set", anschlagDoc);
 
             anschlaegeCol.updateOne(filter, update);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
+        }
+    }
+
+    public boolean checkUpdateToken(Anschlag anschlag) {
+        List<Document> pipeline = Arrays.asList(
+                new Document("$match", new Document("_id", new ObjectId(anschlag.get_id()))),
+                new Document("$limit", 1));
+        AggregateIterable<Document> result = anschlaegeCol.aggregate(pipeline);
+
+        if (result.first().get("updateToken").toString().equals(anschlag.getUpdateToken())) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -167,4 +265,25 @@ public class DbAccessor {
         anschlaegeCol.updateOne(filter, update);
     }
 
+    public void addAnschlagToPerson(String personId, String anschlagId) {
+        Bson filter = Filters.eq("_id", new ObjectId(personId));
+
+        Document doc = new Document();
+        doc.append("anschlagId", anschlagId);
+
+        Bson update = Updates.addToSet("programs", doc);
+
+        personsCol.updateOne(filter, update);
+    }
+
+    public void removeAnschlagFromPerson(String personId, String anschlagId) {
+        Bson filter = Filters.eq("_id", new ObjectId(personId));
+
+        Document doc = new Document();
+        doc.append("anschlagId", anschlagId);
+
+        Bson update = Updates.pull("programs", doc);
+
+        personsCol.updateOne(filter, update);
+    }
 }
