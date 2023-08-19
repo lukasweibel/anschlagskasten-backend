@@ -44,7 +44,7 @@ public class DbAccessor {
     MongoCollection<Document> anschlaegeCol;
     ObjectMapper objectMapper;
 
-    public DbAccessor(@ConfigProperty(name = "mongodb.connection-string") String connectionStr) {
+    public DbAccessor(@ConfigProperty(name = "mongodb.connection.string") String connectionStr) {
         objectMapper = new ObjectMapper();
 
         connectionString = new ConnectionString(connectionStr);

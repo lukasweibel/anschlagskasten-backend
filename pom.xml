@@ -16,6 +16,7 @@
     <quarkus.platform.version>2.16.0.Final</quarkus.platform.version>
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
+    <quarkus.devmode.env-config-properties>true</quarkus.devmode.env-config-properties>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -36,7 +37,10 @@
       <version>1.0.0-b7</version>
       <type>pom</type>
     </dependency>
-
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-scheduler</artifactId>
+    </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
