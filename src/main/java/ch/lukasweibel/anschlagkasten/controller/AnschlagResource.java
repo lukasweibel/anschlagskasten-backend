@@ -1,6 +1,7 @@
 package ch.lukasweibel.anschlagkasten.controller;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -16,6 +17,7 @@ import javax.inject.Inject;
 import ch.lukasweibel.anschlagkasten.db.DbAccessor;
 import ch.lukasweibel.anschlagkasten.model.Anschlag;
 import ch.lukasweibel.anschlagkasten.model.Comment;
+import ch.lukasweibel.anschlagkasten.security.SecurityHandler;
 
 @Path("/anschlaege")
 public class AnschlagResource {
@@ -23,6 +25,9 @@ public class AnschlagResource {
     @Inject
     DbAccessor dbAccessor;
     ObjectMapper objectMapper = new ObjectMapper();
+
+    @Inject
+    SecurityHandler securityHandler;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -33,10 +38,14 @@ public class AnschlagResource {
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response saveAnschlag(String jsonString) throws JsonProcessingException {
+    public Response saveAnschlag(String jsonString, @HeaderParam("Access-Token") String accessToken)
+            throws JsonProcessingException {
+        // if (securityHandler.isAdmin(accessToken)) {
         Anschlag anschlag = objectMapper.readValue(jsonString, Anschlag.class);
         String id = dbAccessor.saveAnschlag(anschlag);
         return Response.ok(id).build();
+        // }
+        // return Response.status(401).build();
     }
 
     @PUT
