@@ -21,7 +21,7 @@ public class SecurityHandler {
     public String getAccessToken(String code) {
         return oAuthClient.getToken("authorization_code",
                 "IEss0jc-AXKefiCiZHc2AObgt75tczmrnYxVC2YSOgA",
-                code, "https://localhost:8080",
+                code, "https://anschlagskasten-web-fd337ce2917a.herokuapp.com",
                 "1Q3C7OGvdVC2l4guadB7dglj3tz9KjBKB3CdQ2g1F80");
     }
 
