@@ -28,7 +28,10 @@ public class SecurityHandler {
     public boolean isRole(String accessToken, String role) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            JsonNode jsonNode = objectMapper.readTree(oAuthClient.getRoles("Bearer " + accessToken, "with_roles"));
+            System.out.println(accessToken);
+            String response = oAuthClient.getRoles("Bearer " + accessToken, "with_roles");
+            System.out.println(response);
+            JsonNode jsonNode = objectMapper.readTree(response);
             JsonNode rolesNode = jsonNode.get("roles");
             for (JsonNode roleNode : rolesNode) {
                 if (roleNode.get("role_name").asText().equals(role)) {
