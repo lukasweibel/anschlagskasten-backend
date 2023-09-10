@@ -40,12 +40,12 @@ public class AnschlagResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveAnschlag(String jsonString, @HeaderParam("Access-Token") String accessToken)
             throws JsonProcessingException {
-        // if (securityHandler.isAdmin(accessToken)) {
-        Anschlag anschlag = objectMapper.readValue(jsonString, Anschlag.class);
-        String id = dbAccessor.saveAnschlag(anschlag);
-        return Response.ok(id).build();
-        // }
-        // return Response.status(401).build();
+        if (securityHandler.isRole(accessToken, "Administrator")) {
+            Anschlag anschlag = objectMapper.readValue(jsonString, Anschlag.class);
+            String id = dbAccessor.saveAnschlag(anschlag);
+            return Response.ok(id).build();
+        }
+        return Response.status(401).build();
     }
 
     @PUT
