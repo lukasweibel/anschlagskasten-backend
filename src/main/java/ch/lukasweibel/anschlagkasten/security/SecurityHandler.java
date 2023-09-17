@@ -3,6 +3,7 @@ package ch.lukasweibel.anschlagkasten.security;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -17,12 +18,17 @@ public class SecurityHandler {
     @RestClient
     OAuthClient oAuthClient;
 
-    // This is just a test secret.
+    @ConfigProperty(name = "oauth.client.id")
+    String clientId;
+
+    @ConfigProperty(name = "oauth.client.secret")
+    String clientSecret;
+
     public String getAccessToken(String code) {
         return oAuthClient.getToken("authorization_code",
-                "IEss0jc-AXKefiCiZHc2AObgt75tczmrnYxVC2YSOgA",
+                clientId,
                 code, "https://anschlagskasten-web-fd337ce2917a.herokuapp.com",
-                "1Q3C7OGvdVC2l4guadB7dglj3tz9KjBKB3CdQ2g1F80");
+                clientSecret);
     }
 
     public boolean isRole(String accessToken, String role) {
