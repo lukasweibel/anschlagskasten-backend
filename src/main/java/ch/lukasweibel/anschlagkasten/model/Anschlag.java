@@ -25,6 +25,7 @@ public class Anschlag {
     private String startTime;
     private String title;
     private Integer status;
+    private String stufe;
 
     public Integer getStatus() {
         return status;
@@ -144,6 +145,14 @@ public class Anschlag {
 
     public void setCreateDate(String createDate) {
         this.createDate = createDate;
+    }
+
+    public String getStufe() {
+        return stufe;
+    }
+
+    public void setStufe(String stufe) {
+        this.stufe = stufe;
     }
 
 }
