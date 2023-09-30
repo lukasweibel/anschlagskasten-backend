@@ -17,7 +17,7 @@ public class Scheduler {
     @Inject
     DbAccessor dbAccessor;
 
-    @Scheduled(every = "1d")
+    @Scheduled(every = "4h")
     public void deactivateOldAnschlaege() {
         System.out.println("Start deleting Anschlaege");
         ArrayList<Anschlag> activeAnschlaege = dbAccessor.getActiveAnschlaege();
