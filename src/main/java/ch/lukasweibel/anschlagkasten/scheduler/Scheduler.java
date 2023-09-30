@@ -17,8 +17,9 @@ public class Scheduler {
     @Inject
     DbAccessor dbAccessor;
 
-    @Scheduled(cron = "{cron.expression.deactivate.anschlaege}")
+    @Scheduled(every = "1d")
     public void deactivateOldAnschlaege() {
+        System.out.println("Start deleting Anschlaege");
         ArrayList<Anschlag> activeAnschlaege = dbAccessor.getActiveAnschlaege();
 
         for (Anschlag anschlag : activeAnschlaege) {

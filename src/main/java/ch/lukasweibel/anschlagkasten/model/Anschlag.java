@@ -25,15 +25,6 @@ public class Anschlag {
     private String startTime;
     private String title;
     private Integer status;
-    private String updateToken;
-
-    public String getUpdateToken() {
-        return updateToken;
-    }
-
-    public void setUpdateToken(String updateToken) {
-        this.updateToken = updateToken;
-    }
 
     public Integer getStatus() {
         return status;

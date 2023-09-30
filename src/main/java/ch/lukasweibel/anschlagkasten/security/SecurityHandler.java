@@ -24,25 +24,44 @@ public class SecurityHandler {
     @ConfigProperty(name = "oauth.client.secret")
     String clientSecret;
 
+    @ConfigProperty(name = "oauth.client.redirect")
+    String redirectUrl;
+
+    String[] editor = { "Stufenleiter/-in", "Gruppenleiter/-in" };
+
+    String[] admin = { "Abteilungsleiter/-in", "Webmaster/-in" };
+
     public String getAccessToken(String code) {
         return oAuthClient.getToken("authorization_code",
                 clientId,
-                code, "https://anschlagskasten-web-fd337ce2917a.herokuapp.com",
+                code, redirectUrl,
                 clientSecret);
     }
 
     public boolean isRole(String accessToken, String role) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            System.out.println(accessToken);
             String response = oAuthClient.getRoles("Bearer " + accessToken, "with_roles");
-            System.out.println(response);
-            JsonNode jsonNode = objectMapper.readTree(response);
-            JsonNode rolesNode = jsonNode.get("roles");
+            JsonNode userNode = objectMapper.readTree(response);
+            JsonNode rolesNode = userNode.get("roles");
+            if (userNode.get("ortsgruppe_id").asInt() != 11) {
+                return false;
+            }
             for (JsonNode roleNode : rolesNode) {
-                if (roleNode.get("role_name").asText().equals(role)) {
-                    return true;
+                if (role.equals("editor")) {
+                    for (String allowedRole : editor) {
+                        if (roleNode.get("role_name").asText().equals(allowedRole)) {
+                            return true;
+                        }
+                    }
+                } else if (role.equals("admin")) {
+                    for (String allowedRole : admin) {
+                        if (roleNode.get("role_name").asText().equals(allowedRole)) {
+                            return true;
+                        }
+                    }
                 }
+
             }
         } catch (JsonMappingException e) {
             e.printStackTrace();

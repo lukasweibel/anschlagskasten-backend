@@ -148,7 +148,6 @@ public class DbAccessor {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            anschlag.setUpdateToken(null);
             anschlaegeList.add(anschlag);
         }
         return anschlaegeList;
@@ -236,19 +235,6 @@ public class DbAccessor {
             anschlaegeCol.updateOne(filter, update);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
-        }
-    }
-
-    public boolean checkUpdateToken(Anschlag anschlag) {
-        List<Document> pipeline = Arrays.asList(
-                new Document("$match", new Document("_id", new ObjectId(anschlag.get_id()))),
-                new Document("$limit", 1));
-        AggregateIterable<Document> result = anschlaegeCol.aggregate(pipeline);
-
-        if (result.first().get("updateToken").toString().equals(anschlag.getUpdateToken())) {
-            return true;
-        } else {
-            return false;
         }
     }
 

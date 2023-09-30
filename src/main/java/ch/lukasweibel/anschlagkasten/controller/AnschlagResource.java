@@ -40,8 +40,7 @@ public class AnschlagResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveAnschlag(String jsonString, @HeaderParam("Access-Token") String accessToken)
             throws JsonProcessingException {
-        if (securityHandler.isRole(accessToken, "Stufenleiter/-in")
-                || securityHandler.isRole(accessToken, "Grupenleiter/-in")) {
+        if (securityHandler.isRole(accessToken, "editor") || securityHandler.isRole(accessToken, "admin")) {
             Anschlag anschlag = objectMapper.readValue(jsonString, Anschlag.class);
             String id = dbAccessor.saveAnschlag(anschlag);
             return Response.ok(id).build();
@@ -51,10 +50,10 @@ public class AnschlagResource {
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateAnschlag(String jsonString)
+    public Response updateAnschlag(String jsonString, @HeaderParam("Access-Token") String accessToken)
             throws JsonProcessingException {
-        Anschlag anschlag = objectMapper.readValue(jsonString, Anschlag.class);
-        if (dbAccessor.checkUpdateToken(anschlag)) {
+        if (securityHandler.isRole(accessToken, "editor") || securityHandler.isRole(accessToken, "admin")) {
+            Anschlag anschlag = objectMapper.readValue(jsonString, Anschlag.class);
             dbAccessor.updateAnschlag(anschlag);
             return Response.ok().build();
         } else {
@@ -66,7 +65,7 @@ public class AnschlagResource {
     @POST
     @Path("/comment/{anschlagId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateAnschlag(@PathParam("anschlagId") String anschlagId, String newCommentJsonString)
+    public Response addComment(@PathParam("anschlagId") String anschlagId, String newCommentJsonString)
             throws JsonProcessingException {
         Comment comment = objectMapper.readValue(newCommentJsonString, Comment.class);
         dbAccessor.addComment(anschlagId, comment);
