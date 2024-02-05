@@ -18,10 +18,11 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
-import com.oracle.svm.core.annotate.Inject;
 
 import ch.lukasweibel.anschlagkasten.model.Anschlag;
 import ch.lukasweibel.anschlagkasten.model.Comment;
+import ch.lukasweibel.anschlagkasten.model.Contact;
+
 import javax.enterprise.context.ApplicationScoped;
 
 import java.time.Instant;
@@ -41,6 +42,7 @@ public class DbAccessor {
     MongoDatabase database;
     Gson gson;
     MongoCollection<Document> personsCol;
+    MongoCollection<Document> contactsCol;
     MongoCollection<Document> anschlaegeCol;
     ObjectMapper objectMapper;
 
@@ -65,6 +67,8 @@ public class DbAccessor {
         personsCol = database.getCollection("persons");
 
         anschlaegeCol = database.getCollection("anschlaege");
+
+        contactsCol = database.getCollection("contacts");
     }
 
     public ArrayList<Document> getPersons() {
@@ -271,5 +275,27 @@ public class DbAccessor {
         Bson update = Updates.pull("programs", doc);
 
         personsCol.updateOne(filter, update);
+    }
+
+    public ArrayList<Contact> getContactsByGroup(String group) {
+        ArrayList<Contact> contactsList = new ArrayList<>();
+
+        Document matchStage = new Document("$match",
+                new Document("triggers", group));
+
+        List<Document> pipeline = Arrays.asList(matchStage);
+
+        AggregateIterable<Document> result = contactsCol.aggregate(pipeline);
+
+        for (Document document : result) {
+            Contact contact = null;
+            try {
+                contact = objectMapper.readValue(document.toJson(), Contact.class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            contactsList.add(contact);
+        }
+        return contactsList;
     }
 }

@@ -15,12 +15,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.inject.Inject;
 
 import ch.lukasweibel.anschlagkasten.db.DbAccessor;
+import ch.lukasweibel.anschlagkasten.messaging.Messanger;
 import ch.lukasweibel.anschlagkasten.model.Anschlag;
 import ch.lukasweibel.anschlagkasten.model.Comment;
 import ch.lukasweibel.anschlagkasten.security.SecurityHandler;
 
 @Path("/anschlaege")
 public class AnschlagResource {
+
+    @Inject
+    Messanger messanger;
 
     @Inject
     DbAccessor dbAccessor;
@@ -43,6 +47,7 @@ public class AnschlagResource {
         if (securityHandler.isRole(accessToken, "editor") || securityHandler.isRole(accessToken, "admin")) {
             Anschlag anschlag = objectMapper.readValue(jsonString, Anschlag.class);
             String id = dbAccessor.saveAnschlag(anschlag);
+            messanger.triggerNotification(anschlag.getStufe());
             return Response.ok(id).build();
         }
         return Response.status(401).build();
