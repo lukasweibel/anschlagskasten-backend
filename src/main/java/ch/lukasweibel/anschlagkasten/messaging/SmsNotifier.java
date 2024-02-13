@@ -20,13 +20,12 @@ public class SmsNotifier {
         AUTH_TOKEN = authToken;
     }
 
-    public void sendMessage(String to, String group) {
+    public void sendMessage(String to, String messageString) {
         Twilio.init(ACCOUNT_SID, AUTH_TOKEN);
         Message message = Message.creator(
                 new PhoneNumber(to),
                 new PhoneNumber("+447893947679"),
-                "Es gibt einen neuen Anschlag für die Gruppe: " + group
-                        + " https://anschlagskasten-web-fd337ce2917a.herokuapp.com/")
+                messageString)
                 .create();
         System.out.println(message.getSid());
 

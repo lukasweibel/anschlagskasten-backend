@@ -19,6 +19,7 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 
+import ch.lukasweibel.anschlagkasten.model.Access;
 import ch.lukasweibel.anschlagkasten.model.Anschlag;
 import ch.lukasweibel.anschlagkasten.model.Comment;
 import ch.lukasweibel.anschlagkasten.model.Contact;
@@ -44,6 +45,7 @@ public class DbAccessor {
     MongoCollection<Document> personsCol;
     MongoCollection<Document> contactsCol;
     MongoCollection<Document> anschlaegeCol;
+    MongoCollection<Document> accessesCol;
     ObjectMapper objectMapper;
 
     public DbAccessor(@ConfigProperty(name = "mongodb.connection-string") String connectionStr) {
@@ -69,6 +71,8 @@ public class DbAccessor {
         anschlaegeCol = database.getCollection("anschlaege");
 
         contactsCol = database.getCollection("contacts");
+
+        accessesCol = database.getCollection("accesses");
     }
 
     public ArrayList<Document> getPersons() {
@@ -297,5 +301,51 @@ public class DbAccessor {
             contactsList.add(contact);
         }
         return contactsList;
+    }
+
+    public void addContact(Contact contact) throws JsonProcessingException {
+        String contactJson = objectMapper.writeValueAsString(contact);
+        Document contactDoc = Document.parse(contactJson);
+
+        contactsCol.insertOne(contactDoc);
+        System.out.println("Inserted new contact: " + contact.getPhoneNumber());
+    }
+
+    public void setAccess(Access access) {
+        access.setTimestamp(Instant.now().toEpochMilli());
+        ObjectId objectId = new ObjectId();
+        String id = objectId.toString();
+        try {
+            String accessJson = objectMapper.writeValueAsString(access);
+            Document accessDoc = Document.parse(accessJson);
+
+            accessesCol.insertOne(accessDoc);
+            System.out.println("Anschlag saved successfully with ID: " + id);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            System.out.println("Error saving access.");
+        }
+    }
+
+    public ArrayList<Access> getAccessesByPhoneNumber(String phoneNumber) {
+        ArrayList<Access> accessList = new ArrayList<>();
+
+        Document matchStage = new Document("$match",
+                new Document("phoneNumber", phoneNumber));
+
+        List<Document> pipeline = Arrays.asList(matchStage);
+
+        AggregateIterable<Document> result = accessesCol.aggregate(pipeline);
+
+        for (Document document : result) {
+            Access access = null;
+            try {
+                access = objectMapper.readValue(document.toJson(), Access.class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            accessList.add(access);
+        }
+        return accessList;
     }
 }

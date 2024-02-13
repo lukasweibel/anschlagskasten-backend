@@ -5,24 +5,33 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Contact {
+public class Access {
     private String phoneNumber;
-    private List<String> triggers;
+    private int accessToken;
+    private long timestamp;
 
     public String getPhoneNumber() {
         return phoneNumber;
+    }
+
+    public int getAccessToken() {
+        return accessToken;
     }
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
 
-    public List<String> getTriggers() {
-        return triggers;
+    public void setAccessToken(int code) {
+        this.accessToken = code;
     }
 
-    public void setTriggers(List<String> triggers) {
-        this.triggers = triggers;
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
 }
