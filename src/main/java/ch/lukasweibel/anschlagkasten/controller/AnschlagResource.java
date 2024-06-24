@@ -44,6 +44,7 @@ public class AnschlagResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveAnschlag(String jsonString, @HeaderParam("Access-Token") String accessToken)
             throws JsonProcessingException {
+        System.out.println(accessToken);
         if (securityHandler.isRole(accessToken, "editor") || securityHandler.isRole(accessToken, "admin")) {
             Anschlag anschlag = objectMapper.readValue(jsonString, Anschlag.class);
             String id = dbAccessor.saveAnschlag(anschlag);
